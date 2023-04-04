@@ -9,17 +9,9 @@
 
 namespace colour {
 
-    typedef struct Slope {
-        float R, G, B;
-    } Slope;
-
-    typedef struct Offset {
-        float R, G, B;
-    } Offset;
-
-    typedef struct Power {
-        float R, G, B;
-    } Power;
+    typedef float Slope[3];
+    typedef float Offset[3];
+    typedef float Power[3];
 
     class Cdl {
     private:
@@ -34,8 +26,10 @@ namespace colour {
         char * filePath;
 
     public:
-        Cdl(Slope S, Offset O, Power P, float sat);
-        int saveCDL(char * outputFilePath);
+        Cdl(float(*cdl)[3][3], float sat);
+        Cdl(const char *filePath);
+        void printCDL();
+        bool saveCDL(const char * outputFilePath, const char *id);
     };
 }
 
