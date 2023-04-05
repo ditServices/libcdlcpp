@@ -9,9 +9,9 @@ namespace fs = std::filesystem;
 
 int save_cdl(fs::path out) {
     float cdlArray[3][3] = {
-            {1, 1, 1},
-            {0, 0, 0},
-            {1, 1, 1}
+            {0.11111, 0.11111, 0.11111},
+            {0.22222, 0.22222, 0.22222},
+            {0.11111, 0.11111, 0.11111}
     };
 
     colour::Cdl testCDL(&cdlArray, 0.654594);

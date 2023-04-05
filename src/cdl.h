@@ -19,17 +19,18 @@ namespace colour {
         Offset offset;
         Power power;
         float sat;
+        std::string id;
 
         inline void initCdlWriter();
 
         pugi::xml_document cdlFile;
         char * filePath;
-
     public:
         Cdl(float(*cdl)[3][3], float sat);
         Cdl(const char *filePath);
         void printCDL();
         bool saveCDL(const char * outputFilePath, const char *id);
+        int status = 0;
     };
 }
 

@@ -7,6 +7,20 @@
 #include <iomanip>
 #include <sstream>
 
+template <typename T>
+std::string ToString(T const & in_val)
+{
+    return std::to_string(in_val);
+}
+// Specialization for boolean type to force "true"/"false"
+template<>
+std::string ToString(bool const & in_val)
+{
+    std::ostringstream oss;
+    oss << std::boolalpha << in_val;
+    return oss.str();
+}
+
 colour::Cdl::Cdl(float (*cdl)[3][3], float sat) {
     for(int s = 0; s < 3; s++) {
         this->slope[s] = (*cdl)[0][s];
@@ -24,36 +38,60 @@ colour::Cdl::Cdl(float (*cdl)[3][3], float sat) {
 }
 
 colour::Cdl::Cdl(const char *filePath) {
-    pugi::xml_parse_result result = this->cdlFile.load_file(filePath, pugi::parse_default|pugi::parse_declaration);
+    //load file and check for errors
+    pugi::xml_parse_result result = this->cdlFile.load_file(filePath);
+    if(!result) this->status = 1;
 
-    std::string xmlVal = this->cdlFile.child_value("Slope");
-    std::stringstream inSlopeVal(xmlVal);
+    //grab first node with attributes
+    pugi::xml_node CDL = this->cdlFile.select_node("ColorDecisionList/ColorDecision/ColorCorrection").node();
+    this->id = CDL.attribute("id").value(); // save this to CDL object
 
-    std::string token;
-    int i = 0;
+    std::string token; //token for parsing.
+    int i = 0; //counter
 
-    while (getline(inSlopeVal, token, ' ')) {
-        this->slope[i++] = stof(token);
+    //slope
+    pugi::xml_node xmlSlope = this->cdlFile.select_node("ColorDecisionList/ColorDecision/ColorCorrection/SOPNode/Slope/text()").node(); //grab the slope node
+    //std::cout << xmlSlope.value() << std::endl;
+
+    std::string sSlope = xmlSlope.value(); //grab the slope value into a string
+    std::stringstream slopeStream(sSlope); //create a stream and point it at our string containing the values
+
+    //iterate over the stream items by space.
+    while(getline(slopeStream, token, ' ')) {
+        this->slope[i++] = stof(token); //copy each slope item into each CDL object.
     }
+    i = 0; //reset counter
 
-    xmlVal = this->cdlFile.child("Offset").value();
-    std::stringstream inOffsetVal(xmlVal);
-    i = 0;
+    //offset
+    pugi::xml_node xmlOffset = this->cdlFile.select_node("ColorDecisionList/ColorDecision/ColorCorrection/SOPNode/Offset/text()").node(); //grab the offset node
+    //std::cout << xmlOffset.value() << std::endl;
 
-    while(getline(inOffsetVal, token, ' ')) {
+    std::string sOffset = xmlOffset.value(); //grab the value into a string sOffset
+    std::stringstream offsetStream(sOffset); //create a stream and point it at our string containing the values
+
+    //iterate over each item by space.
+    while(getline(offsetStream, token, ' ')) {
         this->offset[i++] = stof(token);
     }
+    i = 0; //reset counter
 
-    xmlVal = this->cdlFile.child("Power").value();
-    std::stringstream inPowerVal(xmlVal);
-    i = 0;
+    //power
+    pugi::xml_node xmlPower = this->cdlFile.select_node("ColorDecisionList/ColorDecision/ColorCorrection/SOPNode/Power/text()").node(); //grab the power node
+    //std::cout << xmlPower.value() << std::endl;
 
-    while(getline(inPowerVal, token, ' ')) {
+    std::string sPower = xmlPower.value(); //save the data to a string
+    std::stringstream powerStream(sPower); //load the sPower string to a stream
+
+    //iterate over each item by space
+    while(getline(powerStream, token, ' ')) {
         this->power[i++] = stof(token);
     }
 
-//    xmlVal = this->cdlFile.child("Saturation").value();
-//    this->sat = stof(xmlVal);
+    //saturation
+    pugi::xml_node xmlSat = this->cdlFile.select_node("ColorDecisionList/ColorDecision/ColorCorrection/SATNode/Saturation/text()").node(); //grab the sat node
+    std::string satString = xmlSat.value();
+    this->sat = stof(satString);
+
 }
 
 
@@ -61,20 +99,6 @@ void colour::Cdl::initCdlWriter() {
     pugi::xml_node decl = this->cdlFile.prepend_child(pugi::node_declaration);
     decl.append_attribute("version") = "1.0";
     decl.append_attribute("encoding") = "UTF-8";
-}
-
-template <typename T>
-std::string ToString(T const & in_val)
-{
-    return std::to_string(in_val);
-}
-// Specialization for boolean type to force "true"/"false"
-template<>
-std::string ToString(bool const & in_val)
-{
-    std::ostringstream oss;
-    oss << std::boolalpha << in_val;
-    return oss.str();
 }
 
 bool colour::Cdl::saveCDL(const char * outputFilePath, const char *id) {
@@ -121,6 +145,9 @@ bool colour::Cdl::saveCDL(const char * outputFilePath, const char *id) {
 }
 
 void colour::Cdl::printCDL() {
+
+    std::cout << "ID: " << this->id << std::endl;
+
     for(int i = 0; i < 3; ++i) {
         std::cout << std::setprecision(6) << slope[i] << ", ";
     }
@@ -136,6 +163,9 @@ void colour::Cdl::printCDL() {
     for(int i = 0; i < 3; ++i) {
         std::cout << std::setprecision(6) << this->power[i] << ", ";
     }
+    std::cout << std::endl;
+
+    std::cout << "Saturation: " << this->sat << std::endl;
 }
 
 
