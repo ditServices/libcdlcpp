@@ -12,14 +12,6 @@ std::string ToString(T const & in_val)
 {
     return std::to_string(in_val);
 }
-// Specialization for boolean type to force "true"/"false"
-template<>
-std::string ToString(bool const & in_val)
-{
-    std::ostringstream oss;
-    oss << std::boolalpha << in_val;
-    return oss.str();
-}
 
 colour::Cdl::Cdl(float (*cdl)[3][3], float sat) {
     for(int s = 0; s < 3; s++) {
@@ -93,7 +85,6 @@ colour::Cdl::Cdl(const char *filePath) {
     this->sat = stof(satString);
 
 }
-
 
 void colour::Cdl::initCdlWriter() {
     pugi::xml_node decl = this->cdlFile.prepend_child(pugi::node_declaration);
