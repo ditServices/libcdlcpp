@@ -5,13 +5,18 @@
 #ifndef CDL_CDL_H
 #define CDL_CDL_H
 
+
 #include "pugixml.hpp"
 
 namespace colour {
 
+    //custom float[3] types
     typedef float Slope[3];
     typedef float Offset[3];
     typedef float Power[3];
+
+    //helper print function
+    void printSOP(float (&cdlVal)[3]);
 
     class Cdl {
     private:
@@ -20,19 +25,21 @@ namespace colour {
         Power power;
         float sat;
         std::string id;
-
-        inline void initCdlWriter();
-
         pugi::xml_document cdlFile;
         char * filePath;
     public:
+        //constructors
         Cdl(float(*cdl)[3][3], float sat);
-        Cdl(const char *filePath);
+        explicit Cdl(const char *filePath);
+
         void printCDL();
+        void getSlope(Slope &slopeVal);
+        void getOffset(Offset &offsetVal);
+        void getPower(Power &powerVal);
+        float getSat();
+        std::string getID();
         bool saveCDL(const char * outputFilePath, const char *id);
-        int status = 0;
     };
 }
-
 
 #endif //CDL_CDL_H

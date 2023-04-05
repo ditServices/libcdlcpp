@@ -14,6 +14,10 @@ target_link_libraries(ctest_savecdl cdl)
 add_executable(ctest_read_cdl ctest_read_cdl.cpp)
 target_link_libraries(ctest_read_cdl cdl)
 
+add_executable(ctest_getters ctest_getters.cpp)
+target_link_libraries(ctest_getters cdl)
+
 add_test(ctest_create_cdl_result ctest_create_cdl)
 add_test(ctest_save_cdl_result ctest_savecdl)
 add_test(ctest_read_cdl_result ctest_read_cdl)
+add_test(ctest_getters_result ctest_getters)
