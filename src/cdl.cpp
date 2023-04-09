@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <utility>
 
 //generic print helper function for float3 array
 void colour::printSOP(float (&cdlVal)[3]) {
@@ -231,6 +232,38 @@ float colour::Cdl::getSat() {
 std::string colour::Cdl::getID() {
     return this->id;
 }
+
+colour::Cdl::Cdl() {
+    this->sat = 0;
+}
+
+void colour::Cdl::setSOP(float (*s)[3], float (*o)[3], float (*p)[3]) {
+
+    for(int x = 0; x < 3; x++) {
+        this->slope[x] = (*s)[x];
+    }
+
+    for(int x = 0; x < 3; x++) {
+        this->offset[x] = (*o)[x];
+    }
+
+    for(int x = 0; x < 3; x++) {
+        this->power[x] = (*p)[x];
+    }
+
+}
+
+void colour::Cdl::setSat(float sat) {
+    this->sat = sat;
+}
+
+void colour::Cdl::setID(std::string id) {
+    this->id = std::move(id);
+}
+
+
+
+
 
 
 

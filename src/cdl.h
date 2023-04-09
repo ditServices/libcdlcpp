@@ -29,8 +29,13 @@ namespace colour {
         char * filePath;
     public:
         //constructors
+        Cdl();
         Cdl(float(*cdl)[3][3], float sat);
         explicit Cdl(const char *filePath);
+
+        void setSOP(float (*s)[3], float (*o)[3], float (*p)[3]);
+        void setSat(float sat);
+        void setID(std::string id);
 
         void printCDL();
         void getSlope(Slope &slopeVal);

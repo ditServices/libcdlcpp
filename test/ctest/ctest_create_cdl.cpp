@@ -13,6 +13,18 @@ int createCDL() {
     };
     colour::Cdl cdlData(&cdlArray, 0.55555);
     cdlData.printCDL();
+
+    float slope[3] = {0.11111, 0.11111, 0.11111};
+    float offset[3] = {0.22222, 0.22222, 0.22222};
+    float power[3] = {0.11111, 0.11111, 0.11111};
+
+    colour::Cdl blankcdl;
+    blankcdl.setID("A001");
+    blankcdl.setSOP(&slope, &offset, &power);
+    blankcdl.setSat(1);
+
+    blankcdl.printCDL();
+
     return 0;
 }
 
