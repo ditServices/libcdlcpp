@@ -29,11 +29,11 @@ namespace colour {
         char * filePath;
     public:
         //constructors
-        Cdl();
-        Cdl(float(*cdl)[3][3], float sat);
-        explicit Cdl(const char *filePath);
+        Cdl(); //blank
+        Cdl(float(*cdl)[3][3], float sat); //from float[3][3] and sat
+        explicit Cdl(const char *filePath); //load from file
 
-        void setSOP(float (*s)[3], float (*o)[3], float (*p)[3]);
+        void setSOP(float (*s)[3], float (*o)[3], float (*p)[3]); //set via pointer
         void setSat(float sat);
         void setID(std::string id);
 

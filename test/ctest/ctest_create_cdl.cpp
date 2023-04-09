@@ -17,6 +17,7 @@ int createCDL() {
     float slope[3] = {0.11111, 0.11111, 0.11111};
     float offset[3] = {0.22222, 0.22222, 0.22222};
     float power[3] = {0.11111, 0.11111, 0.11111};
+    float sat = 1.00000;
 
     colour::Cdl blankcdl;
     blankcdl.setID("A001");

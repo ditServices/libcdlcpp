@@ -129,6 +129,17 @@ colour::Cdl::Cdl(const char *filePath) {
     }
 }
 
+//blank init
+colour::Cdl::Cdl() {
+    //default to zero
+    this->sat = 0;
+    for(int i=0; i < 3; i++) {
+        this->slope[i] = 0;
+        this->offset[i] = 0;
+        this->power[i] = 0;
+    }
+}
+
 //save CDL to file
 bool colour::Cdl::saveCDL(const char * outputFilePath, const char *id) {
     //temp holding strings we need to build our xml data
@@ -231,10 +242,6 @@ float colour::Cdl::getSat() {
 
 std::string colour::Cdl::getID() {
     return this->id;
-}
-
-colour::Cdl::Cdl() {
-    this->sat = 0;
 }
 
 void colour::Cdl::setSOP(float (*s)[3], float (*o)[3], float (*p)[3]) {
