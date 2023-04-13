@@ -26,7 +26,6 @@ namespace colour {
         float sat;
         std::string id;
         pugi::xml_document cdlFile;
-        char * filePath;
     public:
         //constructors
         Cdl(); //blank
