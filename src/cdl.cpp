@@ -193,9 +193,11 @@ bool colour::Cdl::saveCDL(const char * outputFilePath, const char *id) {
     saturationNode.append_child(pugi::node_pcdata).set_value(ToString(this->sat).c_str());
 
     bool saveSucceeded = this->cdlFile.save_file(outputFilePath);
-    if(saveSucceeded) {
-        this->cdlFile.reset();
+    if(!saveSucceeded) {
+        return false;
     }
+
+    this->cdlFile.reset(); //reset our document so that we don't append to it.
     return saveSucceeded;
 }
 
