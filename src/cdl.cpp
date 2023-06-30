@@ -10,8 +10,8 @@
 
 //generic print helper function for float3 array
 void colour::printSOP(float (&cdlVal)[3]) {
-    for(int i = 0; i < 3; i++)
-        std::cout << std::setprecision(6) << cdlVal[i] << " ";
+    for(auto value : cdlVal)
+        std::cout << std::setprecision(6) << value << " ";
     std::cout << std::endl;
 }
 
@@ -23,36 +23,26 @@ std::string ToString(T const & in_val)
 }
 
 //constructor from [3][3] cdl matrix
-colour::Cdl::Cdl(float (*cdl)[3][3], float sat) {
-
+colour::Cdl::Cdl(float (*cdl)[3][3], float sat) : mSat(sat) {
     //loop over each element and split into slope offset power arrays
     for(int s = 0; s < 3; s++) {
-        this->slope[s] = (*cdl)[0][s];
+        this->mSlope[s] = (*cdl)[0][s];
+        this->mOffset[s] = (*cdl)[1][s];
+        this->mPower[s] = (*cdl)[2][s];
     }
-
-    for(int o = 0; o < 3; o++) {
-        this->offset[o] = (*cdl)[1][o];
-    }
-
-    for(int p = 0; p < 3; p++) {
-        this->power[p] = (*cdl)[2][p];
-    }
-
-    //saturation
-    this->sat = sat;
 }
 
 //constructor load from file
-colour::Cdl::Cdl(const char *filePath) {
+colour::Cdl::Cdl(const std::string_view &filePath) {
 
     //load file and check for errors
-    pugi::xml_parse_result result = this->cdlFile.load_file(filePath);
+    pugi::xml_parse_result result = this->mCdlFile.load_file(filePath.data());
     if(!result) throw std::runtime_error("Error opening cdl file");
 
     try {
         //grab first node with attributes
-        pugi::xml_node CDL = this->cdlFile.select_node("ColorDecisionList/ColorDecision/ColorCorrection").node();
-        this->id = CDL.attribute("id").value(); // save this to CDL object
+        pugi::xml_node CDL = this->mCdlFile.select_node("ColorDecisionList/ColorDecision/ColorCorrection").node();
+        this->mId = CDL.attribute("id").value(); // save this to CDL object
     } catch (const pugi::xpath_exception &e) {
         std::cout << "Select failed: " << e.what() << std::endl;
         throw std::runtime_error("Error whilst parsing CDL ID");
@@ -63,7 +53,7 @@ colour::Cdl::Cdl(const char *filePath) {
 
     try {
         //slope
-        pugi::xml_node xmlSlope = this->cdlFile.select_node(
+        pugi::xml_node xmlSlope = this->mCdlFile.select_node(
                 "ColorDecisionList/ColorDecision/ColorCorrection/SOPNode/Slope/text()").node(); //grab the slope node
         //std::cout << xmlSlope.value() << std::endl;
 
@@ -72,7 +62,7 @@ colour::Cdl::Cdl(const char *filePath) {
 
         //iterate over the stream items by space.
         while (getline(slopeStream, token, ' ')) {
-            this->slope[i++] = stof(token); //copy each slope item into each CDL object.
+            this->mSlope[i++] = stof(token); //copy each slope item into each CDL object.
         }
         i = 0; //reset counter
     }
@@ -83,16 +73,15 @@ colour::Cdl::Cdl(const char *filePath) {
 
     try {
         //offset
-        pugi::xml_node xmlOffset = this->cdlFile.select_node(
+        pugi::xml_node xmlOffset = this->mCdlFile.select_node(
                 "ColorDecisionList/ColorDecision/ColorCorrection/SOPNode/Offset/text()").node(); //grab the offset node
-        //std::cout << xmlOffset.value() << std::endl;
 
         std::string sOffset = xmlOffset.value(); //grab the value into a string sOffset
         std::stringstream offsetStream(sOffset); //create a stream and point it at our string containing the values
 
         //iterate over each item by space.
         while (getline(offsetStream, token, ' ')) {
-            this->offset[i++] = stof(token);
+            this->mOffset[i++] = stof(token);
         }
         i = 0; //reset counter
     } catch (pugi::xpath_exception &e) {
@@ -101,16 +90,15 @@ colour::Cdl::Cdl(const char *filePath) {
     }
     try {
         //power
-        pugi::xml_node xmlPower = this->cdlFile.select_node(
+        pugi::xml_node xmlPower = this->mCdlFile.select_node(
                 "ColorDecisionList/ColorDecision/ColorCorrection/SOPNode/Power/text()").node(); //grab the power node
-        //std::cout << xmlPower.value() << std::endl;
 
         std::string sPower = xmlPower.value(); //save the data to a string
         std::stringstream powerStream(sPower); //load the sPower string to a stream
 
         //iterate over each item by space
         while (getline(powerStream, token, ' ')) {
-            this->power[i++] = stof(token);
+            this->mPower[i++] = stof(token);
         }
     } catch (pugi::xpath_exception &e) {
         std::cout << "Select failed: " << e.what() << std::endl;
@@ -119,24 +107,13 @@ colour::Cdl::Cdl(const char *filePath) {
 
     try {
         //saturation
-        pugi::xml_node xmlSat = this->cdlFile.select_node(
+        pugi::xml_node xmlSat = this->mCdlFile.select_node(
                 "ColorDecisionList/ColorDecision/ColorCorrection/SATNode/Saturation/text()").node(); //grab the sat node
         std::string satString = xmlSat.value();
-        this->sat = stof(satString);
+        this->mSat = stof(satString);
     } catch (pugi::xpath_exception &e) {
         std::cout << "Select failed: " << e.what() << std::endl;
         throw std::runtime_error("Error whilst parsing Saturation value");
-    }
-}
-
-//blank init
-colour::Cdl::Cdl() {
-    //default to zero
-    this->sat = 0;
-    for(int i=0; i < 3; i++) {
-        this->slope[i] = 0;
-        this->offset[i] = 0;
-        this->power[i] = 0;
     }
 }
 
@@ -148,24 +125,24 @@ bool colour::Cdl::saveCDL(const char * outputFilePath, const char *id) {
     std::string powerXml;
 
     //create xml header and attributes
-    pugi::xml_node decl = this->cdlFile.prepend_child(pugi::node_declaration);
+    pugi::xml_node decl = this->mCdlFile.prepend_child(pugi::node_declaration);
     decl.append_attribute("version") = "1.0";
     decl.append_attribute("encoding") = "UTF-8";
 
     //loop through each <float3> type and append to our holding strings.
     for(int i = 0; i < 3; i++) {
-        slopeXml.append(ToString(this->slope[i]));
+        slopeXml.append(ToString(this->mSlope[i]));
         slopeXml.append(" ");
 
-        offsetXml.append(ToString(this->offset[i]));
+        offsetXml.append(ToString(this->mOffset[i]));
         offsetXml.append(" ");
 
-        powerXml.append(ToString(this->power[i]));
+        powerXml.append(ToString(this->mPower[i]));
         powerXml.append(" ");
     }
 
     //create our root node
-    pugi::xml_node root = this->cdlFile.append_child("ColorDecisionList");
+    pugi::xml_node root = this->mCdlFile.append_child("ColorDecisionList");
     root.append_attribute("xmlns") = "urn:ASC:CDL:v1.2";
 
     //create some of the child nodes before main data is added
@@ -190,87 +167,80 @@ bool colour::Cdl::saveCDL(const char * outputFilePath, const char *id) {
     //Saturation section.
     pugi::xml_node satNode = colorCorrection.append_child("SATNode");
     pugi::xml_node saturationNode = satNode.append_child("Saturation");
-    saturationNode.append_child(pugi::node_pcdata).set_value(ToString(this->sat).c_str());
+    saturationNode.append_child(pugi::node_pcdata).set_value(ToString(this->mSat).c_str());
 
-    bool saveSucceeded = this->cdlFile.save_file(outputFilePath);
-    if(!saveSucceeded) {
+    if(!this->mCdlFile.save_file(outputFilePath)) {
         return false;
     }
 
-    this->cdlFile.reset(); //reset our document so that we don't append to it.
-    return saveSucceeded;
+    this->mCdlFile.reset(); //reset our document so that we don't append to it.
+    return true;
 }
 
 //pretty print the whole matrix
 void colour::Cdl::printCDL() {
 
-    std::cout << "ID: " << this->id << std::endl;
+    std::cout << "ID: " << this->mId << std::endl;
 
     //loop over slope
     for(int i = 0; i < 3; ++i) {
-        std::cout << std::setprecision(6) << slope[i] << ", ";
+        std::cout << std::setprecision(6) << mSlope[i] << ", ";
     }
     std::cout << std::endl;
 
     //loop over offset
     for(int i = 0; i < 3; ++i) {
-        std::cout << std::setprecision(6) << this->offset[i] << ", ";
+        std::cout << std::setprecision(6) << this->mOffset[i] << ", ";
     }
 
     std::cout << std::endl;
 
     //loop over power
     for(int i = 0; i < 3; ++i) {
-        std::cout << std::setprecision(6) << this->power[i] << ", ";
+        std::cout << std::setprecision(6) << this->mPower[i] << ", ";
     }
     std::cout << std::endl;
 
     //print saturation
-    std::cout << "Saturation: " << this->sat << std::endl;
+    std::cout << "Saturation: " << this->mSat << std::endl;
 }
 
 void colour::Cdl::getSlope(colour::Slope &slopeVal) {
-    std::memcpy(slopeVal, this->slope, sizeof(this->slope));
+    std::memcpy(slopeVal, this->mSlope, sizeof(this->mSlope));
 }
 
 void colour::Cdl::getOffset(colour::Offset &offsetVal) {
-    std::memcpy(offsetVal, this->offset, sizeof(this->offset));
+    std::memcpy(offsetVal, this->mOffset, sizeof(this->mOffset));
 }
 
 void colour::Cdl::getPower(colour::Power &powerVal) {
-    std::memcpy(powerVal, this->power, sizeof(this->power));
+    std::memcpy(powerVal, this->mPower, sizeof(this->mPower));
 }
 
 float colour::Cdl::getSat() {
-    return this->sat;
+    return this->mSat;
 }
 
 std::string colour::Cdl::getID() {
-    return this->id;
+    return this->mId;
 }
 
 void colour::Cdl::setSOP(float (*s)[3], float (*o)[3], float (*p)[3]) {
 
-    for(int x = 0; x < 3; x++) {
-        this->slope[x] = (*s)[x];
-    }
-
-    for(int x = 0; x < 3; x++) {
-        this->offset[x] = (*o)[x];
-    }
-
-    for(int x = 0; x < 3; x++) {
-        this->power[x] = (*p)[x];
+    for( int index = 0; index < 3; index++) {
+        this->mSlope[index] = (*s)[index];
+        this->mOffset[index] = (*o)[index];
+        this->mPower[index] = (*p)[index];
     }
 
 }
 
 void colour::Cdl::setSat(float sat) {
-    this->sat = sat;
+    this->mSat = sat;
 }
 
 void colour::Cdl::setID(std::string id) {
-    this->id = std::move(id);
+    this->mId = std::move(id);
 }
 
 
